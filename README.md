@@ -1,4 +1,3 @@
-# OceanFriends-OA
 # OceanFriends Code Snippets - Authentication Hack
 
 ## Core Problem: Bypassing Anvil's Login Limitations
@@ -97,13 +96,12 @@ def get_user_by_email(email):
                 'user_data': {
                     'email': user_row['email'],
                     'password_hash': user_row['password_hash'],
-                    'user_type': user_row['user_type'],
-                    'verification_status': user_row.get('verification_status', 'pending')
+                    'user_type': user_row['user_type']
                 }
             }
-        return {'success': False, 'error': 'User not found'}
+        return {'success': False}
     except Exception as e:
-        return {'success': False, 'error': str(e)}
+        return {'success': False}
 
 @anvil.server.callable
 def get_sponsor_details(user_email):
@@ -114,7 +112,6 @@ def get_sponsor_details(user_email):
             return {
                 'success': True,
                 'sponsor_data': {
-                    'spons_id': sponsor_row['spons_id'],
                     'name': sponsor_row['name'],
                     'display_name': sponsor_row['display_name'],
                     'website': sponsor_row['website'],
@@ -123,7 +120,7 @@ def get_sponsor_details(user_email):
             }
         return {'success': False}
     except Exception as e:
-        return {'success': False, 'error': str(e)}
+        return {'success': False}
 ```
 
 ---
@@ -167,19 +164,6 @@ def token_required(f):
         return f(*args, **kwargs)
     return decorated
 
-def verify_token(token):
-    """Standalone token verification function"""
-    token_data = session_store.get(token)
-    
-    if not token_data:
-        return None
-    
-    if datetime.now() > token_data['expires_at']:
-        del session_store[token]
-        return None
-    
-    return token_data
-
 @auth_bp.route('/me', methods=['GET'])
 @token_required
 def get_current_user():
@@ -208,7 +192,6 @@ def get_company_details():
         sponsor_data = anvil_response.get('sponsor_data', {})
         
         return jsonify({
-            "spons_id": sponsor_data.get('spons_id'),
             "company": {
                 "name": sponsor_data.get('name', ''),
                 "display_name": sponsor_data.get('display_name', ''),
@@ -244,7 +227,7 @@ def get_sponsor_projects():
 
 ## Frontend Integration
 
-### Complete React Auth Service
+### React Auth Service
 ```javascript
 export class AnvilAuthService {
   constructor() {
@@ -299,43 +282,9 @@ export class AnvilAuthService {
     }
   }
 
-  // Logout and clean up
-  async logout() {
-    try {
-      await fetch(`${this.baseURL}/api/auth/logout`, {
-        method: "POST",
-        headers: this.getAuthHeaders(),
-      });
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      this.clearToken();
-    }
-  }
-
   // Check authentication status
   isAuthenticated() {
     return !!this.getStoredToken();
-  }
-
-  // Get current user using custom token
-  async getCurrentUser() {
-    try {
-      const response = await fetch(`${this.baseURL}/api/auth/me`, {
-        method: "GET",
-        headers: this.getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to get user");
-      }
-
-      const data = await response.json();
-      return data.user;
-    } catch (error) {
-      this.clearToken(); // Clear invalid token
-      throw error;
-    }
   }
 
   // Protected API call example
@@ -372,46 +321,6 @@ const handleLogin = async (formData) => {
 };
 ```
 
-### React Hook for Authentication
-```javascript
-import { useState, useEffect } from 'react';
-
-export function useAuth() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (authService.isAuthenticated()) {
-        try {
-          const userData = await authService.getCurrentUser();
-          setUser(userData);
-        } catch (error) {
-          console.error('Auth check failed:', error);
-          setUser(null);
-        }
-      }
-      setLoading(false);
-    };
-
-    checkAuth();
-  }, []);
-
-  const login = async (credentials) => {
-    const userData = await authService.login(credentials);
-    setUser(userData);
-    return userData;
-  };
-
-  const logout = async () => {
-    await authService.logout();
-    setUser(null);
-  };
-
-  return { user, loading, login, logout, isAuthenticated: !!user };
-}
-```
-
 ---
 
 ## Key Innovation Points
@@ -429,4 +338,4 @@ export function useAuth() {
 - **Enabled Role-Based Features**: Sponsor-specific actions like project creation and sponsorship management
 - **Scalable Architecture**: Custom token system can easily be replaced with JWT if needed later
 
-**Tech Stack**: Flask + bcrypt + Python secrets + Anvil Uplink + React
+**Tech Stack**: Flask + bcrypt + Python secrets + Anvil Uplink +
