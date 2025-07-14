@@ -1,4 +1,11 @@
 # OceanFriends Code Snippets - Authentication Hack
+Demo:
+
+
+https://github.com/user-attachments/assets/e2c7e2eb-0c45-41c5-8d5f-58d375163e98
+
+
+
 
 ## Core Problem: Bypassing Anvil's Login Limitations
 
